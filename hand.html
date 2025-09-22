@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ручная проверка транзакций - Анализ Блокчейна</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#faf5ff',
+                            100: '#f3e8ff',
+                            200: '#e9d5ff',
+                            300: '#d8b4fe',
+                            400: '#c084fc',
+                            500: '#a855f7',
+                            600: '#9333ea',
+                            700: '#7e22ce',
+                            800: '#6b21a8',
+                            900: '#581c87',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f3e8ff 0%, #d8b4fe 100%);
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-hover {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-hover:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.5s ease;
+        }
+        
+        .btn-hover:hover:after {
+            left: 100%;
+        }
+        
+        .input-focus:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.3);
+            border-color: #a855f7;
+        }
+        
+        .decoration-element {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(147, 51, 234, 0.2) 100%);
+            filter: blur(40px);
+            z-index: 0;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .risk-bar {
+            height: 20px;
+            border-radius: 10px;
+            transition: all 1s ease;
+            background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #ef4444 100%);
+        }
+        
+        .risk-indicator {
+            transition: all 1s ease;
+        }
+        
+        .transaction-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+        
+        .transaction-details.open {
+            max-height: 500px;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Мобильное меню */
+        .mobile-menu {
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+        
+        /* Улучшения для мобильных устройств */
+        @media (max-width: 640px) {
+            .decoration-element {
+                width: 120px;
+                height: 120px;
+                filter: blur(30px);
+            }
+            
+            .risk-bar {
+                height: 16px;
+            }
+            
+            .input-focus {
+                font-size: 16px; /* Убирает увеличение в iOS */
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Декоративные элементы -->
+    <div class="decoration-element top-10 left-10"></div>
+    <div class="decoration-element bottom-10 right-10" style="animation-delay: 2s;"></div>
+    
+    <!-- Шапка -->
+    <header class="bg-primary-900 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="index.html" class="flex items-center">
+                <div class="mr-3 p-2 bg-primary-700 rounded-lg">
+                    <i data-feather="activity" class="w-6 h-6"></i>
+                </div>
+                <h1 class="text-xl md:text-2xl font-bold">Анализ Блокчейна</h1>
+            </a>
+            
+            <!-- Кнопка меню для мобильных -->
+            <button id="mobile-menu-button" class="md:hidden p-2 rounded-lg bg-primary-800">
+                <i data-feather="menu" class="w-6 h-6"></i>
+            </button>
+            
+            <!-- Навигация для десктопа -->
+            <div class="hidden md:flex space-x-3">
+                <a href="login.html" class="bg-transparent hover:bg-primary-800 text-white font-medium py-2 px-4 rounded-lg border border-primary-700">
+                    Вход
+                </a>
+                <a href="register.html" class="bg-primary-700 text-white font-medium py-2 px-4 rounded-lg">
+                    Регистрация
+                </a>
+            </div>
+        </div>
+        
+        <!-- Мобильное меню -->
+        <div id="mobile-menu" class="mobile-menu fixed top-0 right-0 h-full w-64 bg-primary-900 shadow-lg z-50 p-4 md:hidden">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-xl font-bold">Меню</h2>
+                <button id="close-menu" class="p-2 rounded-lg bg-primary-800">
+                    <i data-feather="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <a href="login.html" class="block bg-transparent hover:bg-primary-800 text-white font-medium py-3 px-4 rounded-lg border border-primary-700 text-center">
+                    Вход
+                </a>
+                <a href="register.html" class="block bg-primary-700 text-white font-medium py-3 px-4 rounded-lg text-center">
+                    Регистрация
+                </a>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Основной контент -->
+    <main class="flex-grow flex items-center justify-center px-4 py-10 relative z-10">
+        <div class="w-full max-w-2xl">
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden p-6 md:p-8 card-hover relative">
+                <!-- Декоративный уголок -->
+                <div class="absolute top-0 right-0 w-16 h-16 overflow-hidden">
+                    <div class="absolute transform rotate-45 bg-primary-100 origin-top-left -right-8 -top-8 w-16 h-16"></div>
+                </div>
+                
+                <div class="text-center relative z-10">
+                    <div class="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 text-primary-700">
+                        <i data-feather="search" class="w-8 h-8"></i>
+                    </div>
+                    
+                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Ручная проверка транзакции</h1>
+                    <p class="text-gray-600 mb-6">Введите данные транзакции для анализа вероятности использования микшера</p>
+
+                    <form id="transaction-form" class="space-y-4 text-left">
+                        <div>
+                            <label for="transaction-hash" class="block text-sm font-medium text-gray-700 mb-1">Хеш транзакции</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i data-feather="hash" class="h-5 w-5 text-gray-400"></i>
+                                </div>
+                                <input type="text" id="transaction-hash" class="input-focus w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" placeholder="0xa1b2c3d4e5f67890..." required>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="transaction-date" class="block text-sm font-medium text-gray-700 mb-1">Дата проведения транзакции</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i data-feather="calendar" class="h-5 w-5 text-gray-400"></i>
+                                </div>
+                                <input type="date" id="transaction-date" class="input-focus w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="blockchain-type" class="block text-sm font-medium text-gray-700 mb-1">Тип блокчейна</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i data-feather="layers" class="h-5 w-5 text-gray-400"></i>
+                                </div>
+                                <select id="blockchain-type" class="input-focus w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="ethereum">Ethereum</option>
+                                    <option value="bitcoin">Bitcoin</option>
+                                    <option value="bsc">Binance Smart Chain</option>
+                                    <option value="polygon">Polygon</option>
+                                    <option value="other">Другой</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn-hover w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center shadow-md pulse">
+                            <i data-feather="search" class="w-5 h-5 mr-2"></i>
+                            Проанализировать транзакцию
+                        </button>
+                    </form>
+                    
+                    <!-- Результаты анализа -->
+                    <div id="analysis-results" class="mt-8 hidden">
+                        <div class="bg-gray-50 rounded-xl p-4 md:p-6">
+                            <h2 class="text-xl font-bold text-gray-800 mb-4">Результаты анализа</h2>
+                            
+                            <div class="mb-6">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm font-medium text-gray-700">Вероятность использования микшера:</span>
+                                    <span id="risk-percentage" class="text-lg font-bold">0%</span>
+                                </div>
+                                <div class="risk-bar mb-2">
+                                    <div id="risk-level" class="h-full rounded-lg bg-primary-500 transition-all duration-1000" style="width: 0%"></div>
+                                </div>
+                                <div id="risk-label" class="text-sm font-medium risk-indicator">Низкий риск</div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 gap-4 mb-6">
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <div class="flex items-center mb-2">
+                                        <i data-feather="hash" class="w-4 h-4 text-gray-500 mr-2"></i>
+                                        <span class="text-sm font-medium text-gray-700">Хеш транзакции:</span>
+                                    </div>
+                                    <div id="result-hash" class="text-xs font-mono text-gray-600 break-all"></div>
+                                </div>
+                                
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <div class="flex items-center mb-2">
+                                        <i data-feather="calendar" class="w-4 h-4 text-gray-500 mr-2"></i>
+                                        <span class="text-sm font-medium text-gray-700">Дата:</span>
+                                    </div>
+                                    <div id="result-date" class="text-sm text-gray-600"></div>
+                                </div>
+                                
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <div class="flex items-center mb-2">
+                                        <i data-feather="layers" class="w-4 h-4 text-gray-500 mr-2"></i>
+                                        <span class="text-sm font-medium text-gray-700">Блокчейн:</span>
+                                    </div>
+                                    <div id="result-blockchain" class="text-sm text-gray-600"></div>
+                                </div>
+                                
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <div class="flex items-center mb-2">
+                                        <i data-feather="clock" class="w-4 h-4 text-gray-500 mr-2"></i>
+                                        <span class="text-sm font-medium text-gray-700">Время анализа:</span>
+                                    </div>
+                                    <div id="analysis-time" class="text-sm text-gray-600"></div>
+                                </div>
+                            </div>
+                            
+                            <button id="toggle-details" class="w-full bg-primary-100 hover:bg-primary-200 text-primary-700 font-medium py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
+                                <i data-feather="chevron-down" class="w-4 h-4 mr-2"></i>
+                                Показать детали анализа
+                            </button>
+                            
+                            <div id="transaction-details" class="transaction-details mt-4">
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <h3 class="font-medium text-gray-700 mb-3">Детали анализа:</h3>
+                                    <ul class="space-y-2 text-sm text-gray-600">
+                                        <li id="detail-1" class="flex items-center">
+                                            <i data-feather="check-circle" class="w-4 h-4 text-green-500 mr-2"></i>
+                                            <span>Анализ паттернов транзакции</span>
+                                        </li>
+                                        <li id="detail-2" class="flex items-center">
+                                            <i data-feather="check-circle" class="w-4 h-4 text-green-500 mr-2"></i>
+                                            <span>Проверка связей с известными миксерами</span>
+                                        </li>
+                                        <li id="detail-3" class="flex items-center">
+                                            <i data-feather="check-circle" class="w-4 h-4 text-green-500 mr-2"></i>
+                                            <span>Анализ временных меток</span>
+                                        </li>
+                                        <li id="detail-4" class="flex items-center">
+                                            <i data-feather="check-circle" class="w-4 h-4 text-green-500 mr-2"></i>
+                                            <span>Проверка суммы и количества выходов</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 text-center">
+                            <button id="new-analysis" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-all duration-300">
+                                <i data-feather="refresh-cw" class="w-4 h-4 mr-2 inline"></i>
+                                Новый анализ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center text-primary-800 opacity-80">
+                <p class="text-sm flex items-center justify-center">
+                    <i data-feather="shield" class="w-4 h-4 mr-1"></i>
+                    Используем передовые алгоритмы для обнаружения микшеров
+                </p>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Подвал -->
+    <footer class="bg-primary-900 text-white py-6 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-primary-200 flex items-center justify-center">
+                <i data-feather="lock" class="w-4 h-4 mr-2"></i>
+                © 2025 Анализ Блокчейна. Все права защищены.
+            </p>
+        </div>
+    </footer>
+    
+    <script>
+        feather.replace();
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('transaction-form');
+            const results = document.getElementById('analysis-results');
+            const toggleDetails = document.getElementById('toggle-details');
+            const transactionDetails = document.getElementById('transaction-details');
+            const newAnalysisBtn = document.getElementById('new-analysis');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const closeMenuButton = document.getElementById('close-menu');
+            
+            // Установить сегодняшнюю дату по умолчанию
+            document.getElementById('transaction-date').valueAsDate = new Date();
+            
+            // Мобильное меню
+            mobileMenuButton.addEventListener('click', function() {
+                mobileMenu.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            closeMenuButton.addEventListener('click', function() {
+                mobileMenu.classList.remove('open');
+                document.body.style.overflow = 'auto';
+            });
+            
+            // Закрыть меню при клике вне его
+            document.addEventListener('click', function(e) {
+                if (!mobileMenu.contains(e.target) && e.target !== mobileMenuButton) {
+                    mobileMenu.classList.remove('open');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const transactionHash = document.getElementById('transaction-hash').value;
+                const transactionDate = document.getElementById('transaction-date').value;
+                const blockchainType = document.getElementById('blockchain-type').value;
+                
+                if (!transactionHash || !transactionDate) {
+                    alert('Пожалуйста, заполните все обязательные поля');
+                    return;
+                }
+                
+                // Показать анимацию загрузки
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i data-feather="loader" class="w-5 h-5 mr-2 animate-spin"></i>Анализируем...';
+                feather.replace();
+                
+                // Имитация анализа (в реальном приложении здесь был бы API запрос)
+                setTimeout(() => {
+                    // Сгенерировать случайный результат анализа
+                    const riskPercentage = Math.floor(Math.random() * 100);
+                    const isRecent = new Date(transactionDate) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+                    
+                    // Обновить результаты
+                    document.getElementById('result-hash').textContent = transactionHash;
+                    document.getElementById('result-date').textContent = new Date(transactionDate).toLocaleDateString('ru-RU');
+                    document.getElementById('result-blockchain').textContent = document.getElementById('blockchain-type').options[document.getElementById('blockchain-type').selectedIndex].text;
+                    document.getElementById('analysis-time').textContent = new Date().toLocaleTimeString('ru-RU');
+                    
+                    document.getElementById('risk-percentage').textContent = riskPercentage + '%';
+                    document.getElementById('risk-level').style.width = riskPercentage + '%';
+                    
+                    // Установить цвет в зависимости от уровня риска
+                    let riskColor, riskLabel;
+                    if (riskPercentage < 30) {
+                        riskColor = '#10b981'; // green
+                        riskLabel = 'Низкий риск';
+                    } else if (riskPercentage < 70) {
+                        riskColor = '#f59e0b'; // yellow
+                        riskLabel = 'Средний риск';
+                    } else {
+                        riskColor = '#ef4444'; // red
+                        riskLabel = 'Высокий риск';
+                    }
+                    
+                    document.getElementById('risk-level').style.backgroundColor = riskColor;
+                    document.getElementById('risk-label').textContent = riskLabel;
+                    document.getElementById('risk-label').style.color = riskColor;
+                    
+                    // Показать результаты
+                    results.classList.remove('hidden');
+                    
+                    // Вернуть оригинальную кнопку
+                    submitBtn.innerHTML = originalText;
+                    feather.replace();
+                    
+                    // Прокрутить к результатам
+                    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                }, 2000); // Имитация задержки анализа
+            });
+            
+            // Переключение деталей анализа
+            toggleDetails.addEventListener('click', function() {
+                transactionDetails.classList.toggle('open');
+                const icon = toggleDetails.querySelector('i');
+                if (transactionDetails.classList.contains('open')) {
+                    icon.setAttribute('data-feather', 'chevron-up');
+                    toggleDetails.querySelector('span').textContent = 'Скрыть детали анализа';
+                } else {
+                    icon.setAttribute('data-feather', 'chevron-down');
+                    toggleDetails.querySelector('span').textContent = 'Показать детали анализа';
+                }
+                feather.replace();
+            });
+            
+            // Новый анализ
+            newAnalysisBtn.addEventListener('click', function() {
+                results.classList.add('hidden');
+                transactionDetails.classList.remove('open');
+                form.reset();
+                document.getElementById('transaction-date').valueAsDate = new Date();
+                
+                // Прокрутить к форме
+                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+    </script>
+</body>
+</html>

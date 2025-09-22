@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - Анализ Блокчейна</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#faf5ff',
+                            100: '#f3e8ff',
+                            200: '#e9d5ff',
+                            300: '#d8b4fe',
+                            400: '#c084fc',
+                            500: '#a855f7',
+                            600: '#9333ea',
+                            700: '#7e22ce',
+                            800: '#6b21a8',
+                            900: '#581c87',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f3e8ff 0%, #d8b4fe 100%);
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-hover {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-hover:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.5s ease;
+        }
+        
+        .btn-hover:hover:after {
+            left: 100%;
+        }
+        
+        .input-focus:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.3);
+            border-color: #a855f7;
+        }
+        
+        .decoration-element {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(147, 51, 234, 0.2) 100%);
+            filter: blur(30px);
+            z-index: 0;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .social-btn {
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .social-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .decoration-element {
+                width: 80px;
+                height: 80px;
+                filter: blur(20px);
+            }
+            
+            header .container {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            header .flex.space-x-3 {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Декоративные элементы -->
+    <div class="decoration-element top-5 left-5"></div>
+    <div class="decoration-element bottom-5 right-5" style="animation-delay: 2s;"></div>
+    
+    <!-- Шапка -->
+    <header class="bg-primary-900 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between flex-col sm:flex-row">
+            <a href="index.html" class="flex items-center mb-3 sm:mb-0">
+                <div class="mr-2 p-1.5 bg-primary-700 rounded-lg">
+                    <i data-feather="activity" class="w-5 h-5"></i>
+                </div>
+                <h1 class="text-lg sm:text-xl md:text-2xl font-bold">Анализ Блокчейна</h1>
+            </a>
+            
+            <div class="flex space-x-2">
+                <a href="login.html" class="bg-transparent hover:bg-primary-800 text-white font-medium py-1.5 px-3 rounded-lg border border-primary-700 text-sm">
+                    Вход
+                </a>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Основной контент -->
+    <main class="flex-grow flex items-center justify-center px-3 py-6 relative z-10">
+        <div class="w-full max-w-md mx-4">
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl overflow-hidden p-4 sm:p-6 card-hover relative">
+                <!-- Декоративный уголок -->
+                <div class="absolute top-0 right-0 w-12 h-12 sm:w-16 sm:h-16 overflow-hidden">
+                    <div class="absolute transform rotate-45 bg-primary-100 origin-top-left -right-6 -top-6 w-12 h-12 sm:-right-8 sm:-top-8 sm:w-16 sm:h-16"></div>
+                </div>
+                
+                <div class="text-center relative z-10">
+                    <div class="mb-4 sm:mb-6 inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary-100 text-primary-700">
+                        <i data-feather="user-plus" class="w-6 h-6 sm:w-8 sm:h-8"></i>
+                    </div>
+                    
+                    <h1 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Создать аккаунт</h1>
+                    <p class="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">Заполните форму для регистрации</p>
+
+                    <form id="register-form" class="space-y-3 sm:space-y-4">
+                        <div>
+                            <label for="fullname" class="block text-left text-sm font-medium text-gray-700 mb-1">Полное имя</label>
+                            <input type="text" id="fullname" 
+                                   class="w-full px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg input-focus focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                                   placeholder="Иван Иванов" required>
+                        </div>
+                        
+                        <div>
+                            <label for="email" class="block text-left text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="email" 
+                                   class="w-full px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg input-focus focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                                   placeholder="ваш@email.com" required>
+                        </div>
+                        
+                        <div>
+                            <label for="password" class="block text-left text-sm font-medium text-gray-700 mb-1">Пароль</label>
+                            <input type="password" id="password" 
+                                   class="w-full px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg input-focus focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                                   placeholder="••••••••" required>
+                        </div>
+                        
+                        <div>
+                            <label for="confirm-password" class="block text-left text-sm font-medium text-gray-700 mb-1">Подтвердите пароль</label>
+                            <input type="password" id="confirm-password" 
+                                   class="w-full px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg input-focus focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                                   placeholder="••••••••" required>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <input type="checkbox" id="terms" class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500" required>
+                            <label for="terms" class="ml-2 block text-sm text-gray-700">
+                                Я принимаю <a href="#" class="text-primary-600 hover:text-primary-500">условия использования</a>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 btn-hover flex items-center justify-center shadow-md text-sm sm:text-base">
+                            <i data-feather="user-plus" class="w-4 h-4 sm:w-5 sm:h-5 mr-2"></i>
+                            Зарегистрироваться
+                        </button>
+                    </form>
+                    
+                    <div class="mt-4 sm:mt-6 pt-4 border-t border-gray-200">
+                        <p class="text-sm text-gray-600 mb-3">Или зарегистрируйтесь с помощью</p>
+                        
+                        <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                            <a href="#" class="social-btn bg-white text-gray-700 font-medium py-2 px-3 rounded-lg transition-all duration-300 flex items-center justify-center text-sm">
+                                <i data-feather="github" class="w-4 h-4 mr-2"></i>
+                                GitHub
+                            </a>
+                            <a href="#" class="social-btn bg-white text-gray-700 font-medium py-2 px-3 rounded-lg transition-all duration-300 flex items-center justify-center text-sm">
+                                <i data-feather="mail" class="w-4 h-4 mr-2"></i>
+                                Google
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 sm:mt-6 text-center">
+                        <p class="text-sm text-gray-600">
+                            Уже есть аккаунт? 
+                            <a href="login.html" class="text-primary-600 hover:text-primary-500 font-medium">Войдите</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Подвал -->
+    <footer class="bg-primary-900 text-white py-4 sm:py-6 mt-6">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-primary-200 flex items-center justify-center text-xs sm:text-sm">
+                <i data-feather="lock" class="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2"></i>
+                © 2025 Анализ Блокчейна. Все права защищены.
+            </p>
+        </div>
+    </footer>
+    
+    <script>
+        feather.replace();
+        
+        // Простая проверка сложности пароля
+        const passwordInput = document.getElementById('password');
+        const strengthBars = document.querySelectorAll('.password-strength');
+        
+        if (passwordInput && strengthBars.length) {
+            passwordInput.addEventListener('input', function() {
+                const password = this.value;
+                let strength = 0;
+                
+                if (password.length > 0) strength++;
+                if (password.length > 6) strength++;
+                if (/[A-Z]/.test(password)) strength++;
+                if (/[0-9]/.test(password)) strength++;
+                if (/[^A-Za-z0-9]/.test(password)) strength++;
+                
+                strengthBars.forEach((bar, index) => {
+                    if (index < strength) {
+                        if (strength === 1) bar.style.backgroundColor = '#ef4444';
+                        else if (strength === 2) bar.style.backgroundColor = '#f59e0b';
+                        else if (strength === 3) bar.style.backgroundColor = '#84cc16';
+                        else if (strength >= 4) bar.style.backgroundColor = '#10b981';
+                    } else {
+                        bar.style.backgroundColor = '#e5e7eb';
+                    }
+                });
+            });
+        }
+        
+        // Анимация плавающих элементов
+        document.addEventListener('DOMContentLoaded', function() {
+            const keyframes = `
+                @keyframes float {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-10px); }
+                }
+            `;
+            const style = document.createElement('style');
+            style.textContent = keyframes;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>

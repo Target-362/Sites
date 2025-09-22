@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Постоянный анализ - Анализ Блокчейна</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#faf5ff',
+                            100: '#f3e8ff',
+                            200: '#e9d5ff',
+                            300: '#d8b4fe',
+                            400: '#c084fc',
+                            500: '#a855f7',
+                            600: '#9333ea',
+                            700: '#7e22ce',
+                            800: '#6b21a8',
+                            900: '#581c87',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f3e8ff 0%, #d8b4fe 100%);
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-hover {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-hover:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.5s ease;
+        }
+        
+        .btn-hover:hover:after {
+            left: 100%;
+        }
+        
+        .decoration-element {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(147, 51, 234, 0.2) 100%);
+            filter: blur(40px);
+            z-index: 0;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .transaction-stream {
+            height: 500px;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .transaction-item {
+            transition: all 0.3s ease;
+            border-left: 4px solid;
+        }
+        
+        .transaction-mixer {
+            border-left-color: #ef4444;
+            background-color: #fef2f2;
+        }
+        
+        .transaction-large {
+            border-left-color: #f59e0b;
+            background-color: #fffbeb;
+        }
+        
+        .transaction-normal {
+            border-left-color: #10b981;
+            background-color: #f0fdf4;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .stats-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .live-indicator {
+            width: 12px;
+            height: 12px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        
+        .network-visualization {
+            height: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .network-node {
+            position: absolute;
+            border-radius: 50%;
+            animation: nodeFloat 8s ease-in-out infinite;
+        }
+        
+        @keyframes nodeFloat {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(10px, -10px); }
+            50% { transform: translate(-5px, 5px); }
+            75% { transform: translate(5px, -5px); }
+        }
+        
+        .crypto-selector {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .crypto-selector.active {
+            border-color: #a855f7;
+            transform: scale(1.05);
+        }
+        
+        .crypto-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            .transaction-stream {
+                height: 400px;
+            }
+            
+            .header-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .crypto-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .transaction-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .transaction-buttons button {
+                width: 100%;
+            }
+            
+            .transaction-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .decoration-element {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .network-visualization {
+                height: 150px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .crypto-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .transaction-stream {
+                height: 350px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            .header-title {
+                font-size: 1.1rem;
+            }
+            
+            .main-title {
+                font-size: 1.5rem;
+            }
+            
+            .crypto-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Декоративные элементы -->
+    <div class="decoration-element top-10 left-10"></div>
+    <div class="decoration-element bottom-10 right-10" style="animation-delay: 2s;"></div>
+    
+    <!-- Шапка -->
+    <header class="bg-primary-900 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="index.html" class="flex items-center">
+                <div class="mr-3 p-2 bg-primary-700 rounded-lg">
+                    <i data-feather="activity" class="w-6 h-6"></i>
+                </div>
+                <h1 class="text-xl md:text-2xl font-bold header-title">Анализ Блокчейна</h1>
+            </a>
+            
+            <div class="flex space-x-2 header-buttons">
+                <a href="login.html" class="bg-transparent hover:bg-primary-800 text-white font-medium py-2 px-3 md:px-4 rounded-lg border border-primary-700 text-sm md:text-base">
+                    Вход
+                </a>
+                <a href="register.html" class="bg-primary-700 text-white font-medium py-2 px-3 md:px-4 rounded-lg text-sm md:text-base">
+                    Регистрация
+                </a>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Основной контент -->
+    <main class="flex-grow container mx-auto px-4 py-6 md:py-8 relative z-10">
+        <div class="text-center mb-6 md:mb-8">
+            <div class="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary-100 text-primary-700 mb-3 md:mb-4">
+                <i data-feather="refresh-cw" class="w-6 h-6 md:w-8 md:h-8"></i>
+            </div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2 main-title">Постоянный анализ транзакций</h1>
+            <p class="text-gray-600 max-w-2xl mx-auto text-sm md:text-base">Мониторинг транзакций в реальном времени с выбором криптовалюты</p>
+        </div>
+
+        <!-- Выбор криптовалюты -->
+        <div class="bg-white rounded-xl md:rounded-2xl shadow-lg md:shadow-xl p-4 md:p-6 mb-6 md:mb-8">
+            <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-3 md:mb-4">Выберите криптовалюту для анализа</h2>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4 crypto-grid" id="crypto-selector">
+                <div class="crypto-selector active p-3 md:p-4 rounded-lg border-2 border-primary-500 bg-white cursor-pointer transition-all" data-crypto="ETH">
+                    <div class="crypto-icon bg-gray-800 mx-auto mb-2">ETH</div>
+                    <div class="text-center">
+                        <div class="font-medium text-sm md:text-base">Ethereum</div>
+                        <div class="text-xs text-gray-500">> 10 ETH</div>
+                    </div>
+                </div>
+                
+                <div class="crypto-selector p-3 md:p-4 rounded-lg border-2 border-gray-200 bg-white cursor-pointer transition-all" data-crypto="BTC">
+                    <div class="crypto-icon bg-orange-500 mx-auto mb-2">BTC</div>
+                    <div class="text-center">
+                        <div class="font-medium text-sm md:text-base">Bitcoin</div>
+                        <div class="text-xs text-gray-500">> 1 BTC</div>
+                    </div>
+                </div>
+                
+                <div class="crypto-selector p-3 md:p-4 rounded-lg border-2 border-gray-200 bg-white cursor-pointer transition-all" data-crypto="BNB">
+                    <div class="crypto-icon bg-yellow-500 mx-auto mb-2">BNB</div>
+                    <div class="text-center">
+                        <div class="font-medium text-sm md:text-base">BNB</div>
+                        <div class="text-xs text-gray-500">> 50 BNB</div>
+                    </div>
+                </div>
+                
+                <div class="crypto-selector p-3 md:p-4 rounded-lg border-2 border-gray-200 bg-white cursor-pointer transition-all" data-crypto="USDT">
+                    <div class="crypto-icon bg-green-600 mx-auto mb-2">USDT</div>
+                    <div class="text-center">
+                        <div class="font-medium text-sm md:text-base">USDT</div>
+                        <div class="text-xs text-gray-500">> 100k USDT</div>
+                    </div>
+                </div>
+                
+                <div class="crypto-selector p-3 md:p-4 rounded-lg border-2 border-gray-200 bg-white cursor-pointer transition-all" data-crypto="SOL">
+                    <div class="crypto-icon bg-purple-600 mx-auto mb-2">SOL</div>
+                    <div class="text-center">
+                        <div class="font-medium text-sm md:text-base">Solana</div>
+                        <div class="text-xs text-gray-500">> 100 SOL</div>
+                    </div>
+                </div>
+                
+                <div class="crypto-selector p-3 md:p-4 rounded-lg border-2 border-gray-200 bg-white cursor-pointer transition-all" data-crypto="XRP">
+                    <div class="crypto-icon bg-black mx-auto mb-2">XRP</div>
+                    <div class="text-center">
+                        <div class="font-medium text-sm md:text-base">XRP</div>
+                        <div class="text-xs text-gray-500">> 10k XRP</div>
+                    </div>
+                </div>
+                
+                <div class="crypto-selector p-3 md:p-4 rounded-lg border-2 border-gray-200 bg-white cursor-pointer transition-all" data-crypto="ADA">
+                    <div class="crypto-icon bg-blue-600 mx-auto mb-2">ADA</div>
+                    <div class="text-center">
+                        <div class="font-medium text-sm md:text-base">Cardano</div>
+                        <div class="text-xs text-gray-500">> 5k ADA</div>
+                    </div>
+                </div>
+                
+                <div class="crypto-selector p-3 md:p-4 rounded-lg border-2 border-gray-200 bg-white cursor-pointer transition-all" data-crypto="DOGE">
+                    <div class="crypto-icon bg-yellow-400 mx-auto mb-2">DOGE</div>
+                    <div class="text-center">
+                        <div class="font-medium text-sm md:text-base">Dogecoin</div>
+                        <div class="text-xs text-gray-500">> 50k DOGE</div>
+                    </div>
+                </div>
+                
+                <div class="crypto-selector p-3 md:p-4 rounded-lg border-2 border-gray-200 bg-white cursor-pointer transition-all" data-crypto="DOT">
+                    <div class="crypto-icon bg-pink-600 mx-auto mb-2">DOT</div>
+                    <div class="text-center">
+                        <div class="font-medium text-sm md:text-base">Polkadot</div>
+                        <div class="text-xs text-gray-500">> 2k DOT</div>
+                    </div>
+                </div>
+                
+                <div class="crypto-selector p-3 md:p-4 rounded-lg border-2 border-gray-200 bg-white cursor-pointer transition-all" data-crypto="AVAX">
+                    <div class="crypto-icon bg-red-600 mx-auto mb-2">AVAX</div>
+                    <div class="text-center">
+                        <div class="font-medium text-sm md:text-base">Avalanche</div>
+                        <div class="text-xs text-gray-500">> 500 AVAX</div>
+                    </div>
+                </div>
+                
+                <div class="crypto-selector p-3 md:p-4 rounded-lg border-2 border-gray-200 bg-white cursor-pointer transition-all" data-crypto="LTC">
+                    <div class="crypto-icon bg-gray-500 mx-auto mb-2">LTC</div>
+                    <div class="text-center">
+                        <div class="font-medium text-sm md:text-base">Litecoin</div>
+                        <div class="text-xs text-gray-500">> 100 LTC</div>
+                    </div>
+                </div>
+                
+                <div class="crypto-selector p-3 md:p-4 rounded-lg border-2 border-gray-200 bg-white cursor-pointer transition-all" data-crypto="MATIC">
+                    <div class="crypto-icon bg-purple-500 mx-auto mb-2">MATIC</div>
+                    <div class="text-center">
+                        <div class="font-medium text-sm md:text-base">Polygon</div>
+                        <div class="text-xs text-gray-500">> 10k MATIC</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 p-3 md:p-4 bg-primary-50 rounded-lg">
+                <div class="flex items-center">
+                    <i data-feather="info" class="w-4 h-4 md:w-5 md:h-5 text-primary-600 mr-2"></i>
+                    <span class="text-xs md:text-sm text-primary-700">
+                        Текущая валюта: <span id="current-crypto" class="font-bold">Ethereum (ETH)</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8 stats-grid">
+            <div class="stats-card bg-white rounded-lg md:rounded-xl p-3 md:p-4 shadow-md text-center">
+                <div class="text-xl md:text-2xl font-bold text-green-600 mb-1" id="normal-count">0</div>
+                <div class="text-xs md:text-sm text-gray-600">Нормальные</div>
+            </div>
+            <div class="stats-card bg-white rounded-lg md:rounded-xl p-3 md:p-4 shadow-md text-center">
+                <div class="text-xl md:text-2xl font-bold text-yellow-600 mb-1" id="large-count">0</div>
+                <div class="text-xs md:text-sm text-gray-600">Крупные</div>
+            </div>
+            <div class="stats-card bg-white rounded-lg md:rounded-xl p-3 md:p-4 shadow-md text-center">
+                <div class="text-xl md:text-2xl font-bold text-red-600 mb-1" id="mixer-count">0</div>
+                <div class="text-xs md:text-sm text-gray-600">Микшеры</div>
+            </div>
+            <div class="stats-card bg-white rounded-lg md:rounded-xl p-3 md:p-4 shadow-md text-center">
+                <div class="text-xl md:text-2xl font-bold text-primary-600 mb-1" id="total-count">0</div>
+                <div class="text-xs md:text-sm text-gray-600">Всего</div>
+            </div>
+        </div>
+
+        <!-- Визуализация сети -->
+        <div class="bg-white rounded-xl md:rounded-2xl shadow-lg md:shadow-xl p-4 md:p-6 mb-6 md:mb-8">
+            <div class="flex items-center justify-between mb-3 md:mb-4">
+                <h2 class="text-lg md:text-xl font-bold text-gray-800">Визуализация сети - <span id="network-crypto">Ethereum</span></h2>
+                <div class="flex items-center">
+                    <div class="live-indicator mr-2"></div>
+                    <span class="text-xs md:text-sm text-red-600 font-medium">LIVE</span>
+                </div>
+            </div>
+            <div class="network-visualization" id="network-visualization">
+                <!-- Nodes will be generated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Поток транзакций -->
+        <div class="bg-white rounded-xl md:rounded-2xl shadow-lg md:shadow-xl p-4 md:p-6">
+            <div class="flex items-center justify-between mb-3 md:mb-4">
+                <h2 class="text-lg md:text-xl font-bold text-gray-800">Поток транзакций - <span id="stream-crypto">ETH</span></h2>
+                <div class="flex space-x-2 md:space-x-4 transaction-buttons">
+                    <button id="pause-resume" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-3 md:px-4 rounded-lg transition-all duration-300 flex items-center justify-center text-sm md:text-base">
+                        <i data-feather="pause" class="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2"></i>
+                        <span>Пауза</span>
+                    </button>
+                    <button id="clear-transactions" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-3 md:px-4 rounded-lg transition-all duration-300 flex items-center justify-center text-sm md:text-base">
+                        <i data-feather="trash-2" class="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2"></i>
+                        <span>Очистить</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="transaction-stream bg-gray-50 rounded-lg p-3 md:p-4" id="transaction-stream">
+                <div class="text-center text-gray-500 py-8" id="empty-state">
+                    <i data-feather="database" class="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 md:mb-4"></i>
+                    <p class="text-sm md:text-base">Ожидание транзакций...</p>
+                </div>
+            </div>
+            
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 transaction-info">
+                <div class="flex items-center">
+                    <div class="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded mr-2"></div>
+                    <span class="text-xs md:text-sm text-gray-600">Нормальная транзакция</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-3 h-3 md:w-4 md:h-4 bg-yellow-500 rounded mr-2"></div>
+                    <span class="text-xs md:text-sm text-gray-600" id="large-threshold">Крупный перевод (>10 ETH)</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded mr-2"></div>
+                    <span class="text-xs md:text-sm text-gray-600">Подозрительный микшер</span>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Подвал -->
+    <footer class="bg-primary-900 text-white py-5 md:py-6 mt-6 md:mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-primary-200 flex items-center justify-center text-xs md:text-sm">
+                <i data-feather="lock" class="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2"></i>
+                © 2025 Анализ Блокчейна. Все права защищены.
+            </p>
+        </div>
+    </footer>
+    
+    <script>
+        feather.replace();
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const transactionStream = document.getElementById('transaction-stream');
+            const emptyState = document.getElementById('empty-state');
+            const pauseResumeBtn = document.getElementById('pause-resume');
+            const clearBtn = document.getElementById('clear-transactions');
+            const networkVisualization = document.getElementById('network-visualization');
+            const cryptoSelector = document.getElementById('crypto-selector');
+            
+            let isPaused = false;
+            let transactionCount = 0;
+            let normalCount = 0;
+            let largeCount = 0;
+            let mixerCount = 0;
+            let currentCrypto = 'ETH';
+            let transactionInterval;
+            
+            // Конфигурация криптовалют
+            const cryptoConfig = {
+                'ETH': { 
+                    name: 'Ethereum', 
+                    symbol: 'ETH', 
+                    largeThreshold: 10,
+                    decimals: 4,
+                    color: '#3C3C3D'
+                },
+                'BTC': { 
+                    name: 'Bitcoin', 
+                    symbol: 'BTC', 
+                    largeThreshold: 1,
+                    decimals: 6,
+                    color: '#F7931A'
+                },
+                'BNB': { 
+                    name: 'BNB', 
+                    symbol: 'BNB', 
+                    largeThreshold: 50,
+                    decimals: 2,
+                    color: '#F0B90B'
+                },
+                'USDT': { 
+                    name: 'USDT', 
+                    symbol: 'USDT', 
+                    largeThreshold: 100000,
+                    decimals: 0,
+                    color: '#26A17B'
+                },
+                'SOL': { 
+                    name: 'Solana', 
+                    symbol: 'SOL', 
+                    largeThreshold: 100,
+                    decimals: 2,
+                    color: '#9945FF'
+                },
+                'XRP': { 
+                    name: 'XRP', 
+                    symbol: 'XRP', 
+                    largeThreshold: 10000,
+                    decimals: 0,
+                    color: '#23292F'
+                },
+                'ADA': { 
+                    name: 'Cardano', 
+                    symbol: 'ADA', 
+                    largeThreshold: 5000,
+                    decimals: 0,
+                    color: '#0033AD'
+                },
+                'DOGE': { 
+                    name: 'Dogecoin', 
+                    symbol: 'DOGE', 
+                    largeThreshold: 50000,
+                    decimals: 0,
+                    color: '#C2A633'
+                },
+                'DOT': { 
+                    name: 'Polkadot', 
+                    symbol: 'DOT', 
+                    largeThreshold: 2000,
+                    decimals: 0,
+                    color: '#E6007A'
+                },
+                'AVAX': { 
+                    name: 'Avalanche', 
+                    symbol: 'AVAX', 
+                    largeThreshold: 500,
+                    decimals: 0,
+                    color: '#E84142'
+                },
+                'LTC': { 
+                    name: 'Litecoin', 
+                    symbol: 'LTC', 
+                    largeThreshold: 100,
+                    decimals: 2,
+                    color: '#345D9D'
+                },
+                'MATIC': { 
+                    name: 'Polygon', 
+                    symbol: 'MATIC', 
+                    largeThreshold: 10000,
+                    decimals: 0,
+                    color: '#8247E5'
+                }
+            };
+            
+            // Инициализация визуализации сети
+            function initNetworkVisualization() {
+                networkVisualization.innerHTML = '';
+                // Создаем узлы сети
+                for (let i = 0; i < 15; i++) {
+                    const node = document.createElement('div');
+                    node.className = 'network-node';
+                    node.style.width = (10 + Math.random() * 20) + 'px';
+                    node.style.height = node.style.width;
+                    node.style.left = Math.random() * 100 + '%';
+                    node.style.top = Math.random() * 100 + '%';
+                    node.style.backgroundColor = cryptoConfig[currentCrypto].color;
+                    node.style.opacity = '0.7';
+                    node.style.animationDelay = (Math.random() * 5) + 's';
+                    networkVisualization.appendChild(node);
+                }
+            }
+            
+            // Переключение криптовалюты
+            cryptoSelector.querySelectorAll('.crypto-selector').forEach(selector => {
+                selector.addEventListener('click', function() {
+                    // Убираем активный класс у всех
+                    cryptoSelector.querySelectorAll('.crypto-selector').forEach(s => {
+                        s.classList.remove('active');
+                        s.classList.remove('border-primary-500');
+                        s.classList.add('border-gray-200');
+                    });
+                    
+                    // Добавляем активный класс к выбранному
+                    this.classList.add('active');
+                    this.classList.add('border-primary-500');
+                    this.classList.remove('border-gray-200');
+                    
+                    // Обновляем текущую криптовалюту
+                    currentCrypto = this.getAttribute('data-crypto');
+                    const config = cryptoConfig[currentCrypto];
+                    
+                    // Обновляем интерфейс
+                    document.getElementById('current-crypto').textContent = `${config.name} (${config.symbol})`;
+                    document.getElementById('network-crypto').textContent = config.name;
+                    document.getElementById('stream-crypto').textContent = config.symbol;
+                    document.getElementById('large-threshold').textContent = `Крупный перевод (>${config.largeThreshold} ${config.symbol})`;
+                    
+                    // Переинициализируем визуализацию сети
+                    initNetworkVisualization();
+                    
+                    // Очищаем транзакции при смене валюты
+                    clearTransactions();
+                });
+            });
+            
+            // Генерация случайной транзакции
+            function generateRandomTransaction() {
+                if (isPaused) return;
+                
+                transactionCount++;
+                
+                const config = cryptoConfig[currentCrypto];
+                const types = ['normal', 'large', 'mixer'];
+                const weights = [70, 20, 10]; // Вероятности: 70% normal, 20% large, 10% mixer
+                let typeIndex = 0;
+                const random = Math.random() * 100;
+                
+                for (let i = 0; i < weights.length; i++) {
+                    if (random < weights[i]) {
+                        typeIndex = i;
+                        break;
+                    }
+                }
+                
+                const type = types[typeIndex];
+                let amount;
+                
+                if (type === 'large') {
+                    // Крупная транзакция - выше порога
+                    amount = (config.largeThreshold + Math.random() * config.largeThreshold * 2).toFixed(config.decimals);
+                } else {
+                    // Нормальная транзакция - ниже порога
+                    amount = (Math.random() * config.largeThreshold).toFixed(config.decimals);
+                }
+                
+                const from = '0x' + Math.random().toString(16).substr(2, 8) + '...' + Math.random().toString(16).substr(2, 8);
+                const to = '0x' + Math.random().toString(16).substr(2, 8) + '...' + Math.random().toString(16).substr(2, 8);
+                
+                // Обновляем счетчики
+                if (type === 'normal') normalCount++;
+                if (type === 'large') largeCount++;
+                if (type === 'mixer') mixerCount++;
+                
+                document.getElementById('normal-count').textContent = normalCount;
+                document.getElementById('large-count').textContent = largeCount;
+                document.getElementById('mixer-count').textContent = mixerCount;
+                document.getElementById('total-count').textContent = transactionCount;
+                
+                // Создаем элемент транзакции
+                const transactionItem = document.createElement('div');
+                transactionItem.className = `transaction-item transaction-${type} p-3 md:p-4 mb-2 md:mb-3 rounded-lg shadow-sm`;
+                
+                transactionItem.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 md:w-3 md:h-3 rounded-full mr-2 ${type === 'normal' ? 'bg-green-500' : type === 'large' ? 'bg-yellow-500' : 'bg-red-500'}"></div>
+                            <span class="text-xs md:text-sm font-medium ${type === 'normal' ? 'text-green-700' : type === 'large' ? 'text-yellow-700' : 'text-red-700'}">
+                                ${type === 'normal' ? 'Нормальная' : type === 'large' ? 'Крупный перевод' : 'Микшер'}
+                            </span>
+                        </div>
+                        <span class="text-xs md:text-sm font-mono bg-gray-100 px-2 py-1 rounded">${amount} ${config.symbol}</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs md:text-sm text-gray-600">
+                        <div><span class="font-medium">From:</span> ${from}</div>
+                        <div><span class="font-medium">To:</span> ${to}</div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2">${new Date().toLocaleTimeString('ru-RU')}</div>
+                `;
+                
+                // Добавляем анимацию появления
+                transactionItem.style.opacity = '0';
+                transactionItem.style.transform = 'translateY(-10px)';
+                
+                if (emptyState.parentNode) {
+                    emptyState.parentNode.removeChild(emptyState);
+                }
+                
+                transactionStream.insertBefore(transactionItem, transactionStream.firstChild);
+                
+                // Анимация появления
+                setTimeout(() => {
+                    transactionItem.style.transition = 'all 0.3s ease';
+                    transactionItem.style.opacity = '1';
+                    transactionItem.style.transform = 'translateY(0)';
+                }, 10);
+                
+                // Ограничиваем количество видимых транзакций
+                if (transactionStream.children.length > 15) {
+                    transactionStream.removeChild(transactionStream.lastChild);
+                }
+                
+                // Добавляем визуальный эффект в сетевую визуализацию
+                addNetworkEffect(type);
+            }
+            
+            // Добавляем эффект в сетевую визуализацию
+            function addNetworkEffect(type) {
+                const effect = document.createElement('div');
+                effect.style.position = 'absolute';
+                effect.style.width = '20px';
+                effect.style.height = '20px';
+                effect.style.borderRadius = '50%';
+                effect.style.left = Math.random() * 100 + '%';
+                effect.style.top = Math.random() * 100 + '%';
+                
+                if (type === 'normal') {
+                    effect.style.backgroundColor = 'rgba(16, 185, 129, 0.3)';
+                    effect.style.boxShadow = '0 0 15px 3px rgba(16, 185, 129, 0.5)';
+                } else if (type === 'large') {
+                    effect.style.backgroundColor = 'rgba(245, 158, 11, 0.3)';
+                    effect.style.boxShadow = '0 0 15px 3px rgba(245, 158, 11, 0.5)';
+                } else {
+                    effect.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
+                    effect.style.boxShadow = '0 0 15px 3px rgba(239, 68, 68, 0.5)';
+                }
+                
+                effect.style.animation = 'pulse 1s ease-out forwards';
+                networkVisualization.appendChild(effect);
+                
+                // Удаляем эффект после анимации
+                setTimeout(() => {
+                    if (effect.parentNode) {
+                        effect.parentNode.removeChild(effect);
+                    }
+                }, 1000);
+            }
+            
+            // Очистка транзакций
+            function clearTransactions() {
+                transactionStream.innerHTML = '';
+                const empty = document.createElement('div');
+                empty.id = 'empty-state';
+                empty.className = 'text-center text-gray-500 py-8';
+                empty.innerHTML = '<i data-feather="database" class="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 md:mb-4"></i><p class="text-sm md:text-base">Ожидание транзакций...</p>';
+                transactionStream.appendChild(empty);
+                feather.replace();
+                
+                // Сброс счетчиков
+                transactionCount = normalCount = largeCount = mixerCount = 0;
+                document.getElementById('normal-count').textContent = '0';
+                document.getElementById('large-count').textContent = '0';
+                document.getElementById('mixer-count').textContent = '0';
+                document.getElementById('total-count').textContent = '0';
+            }
+            
+            // Управление паузой/возобновлением
+            pauseResumeBtn.addEventListener('click', function() {
+                isPaused = !isPaused;
+                const icon = pauseResumeBtn.querySelector('i');
+                if (isPaused) {
+                    icon.setAttribute('data-feather','play')
+                    pauseResumeBtn.querySelector('span').textContent = 'Возобновить';
+                } else {
+                    icon.setAttribute('data-feather', 'pause');
+                    pauseResumeBtn.querySelector('span').textContent = 'Пауза';
+                }
+                feather.replace();
+            });
+            
+            // Очистка транзакций
+            clearBtn.addEventListener('click', clearTransactions);
+            
+            // Запуск генерации транзакций
+            initNetworkVisualization();
+            transactionInterval = setInterval(generateRandomTransaction, 1500);
+            
+            // Генерируем первую транзакцию сразу после загрузки
+            setTimeout(generateRandomTransaction, 500);
+        });
+    </script>
+</body>
+</html>
